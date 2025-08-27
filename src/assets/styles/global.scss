@@ -1,0 +1,50 @@
+/* global.scss */
+
+/* Reset básico */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Garantir altura total */
+html, body {
+  height: 100%;
+  font-family: sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  background-color: #fff;
+  color: #000;
+}
+
+/* Remover estilos padrão de listas */
+ul, ol {
+  list-style: none;
+}
+
+/* Remover sublinhado padrão dos links */
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+/* Remover borda de inputs e botões no focus */
+button, input, textarea, select {
+  font: inherit;
+  border: none;
+  outline: none;
+  background: none;
+}
+
+/* Garantir imagens responsivas */
+img, picture, video, canvas, svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Evitar quebra estranha de texto */
+p, h1, h2, h3, h4, h5, h6 {
+  overflow-wrap: break-word;
+}
