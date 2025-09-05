@@ -3,10 +3,11 @@ import { supabase } from "../../../src/services/supabaseClient";
 import {
   Table, TableBody, TableCell, TableContainer,
   TableHead, TableRow, Paper, styled, tableCellClasses,
-  Skeleton, Container,Button, 
+  Skeleton, Container,Button, Box,
   Dialog, DialogTitle, DialogContent, DialogActions, TextField,
   FormControl,InputLabel,Select,MenuItem
 } from "@mui/material";
+import Progress from "../progress/Progress";
 
 const StyledTableCell = styled(TableCell)(({ theme }) => ({
   [`&.${tableCellClasses.head}`]: {
@@ -19,15 +20,15 @@ const StyledTableCell = styled(TableCell)(({ theme }) => ({
 }));
 
 export default function TableRegistro({valores, onSuccess }){
-  const { categoria, tipo, descricao, valor } = valores;
+  const { status, tipo, descricao, valor, dataRegistro  } = valores;
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadingButton, setLoadingButton] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [editFormData, setEditFormData] = useState({});
+  const [setDataRegistrar, dataRegistrar] = useState("");
   const [open, setOpen] = useState(false);
   const [editingRow, setEditingRow] = useState(null); // Armazena os dados da linha a ser editada
-
+  const [progress, setProgress] = useState(false)
    useEffect(() => {
         filtrar();
     }, []);
@@ -35,7 +36,7 @@ export default function TableRegistro({valores, onSuccess }){
     const addTransacao = async(e) => {
         e.preventDefault()
         setLoadingButton(true); // Desabilita o botão
-
+        setProgress(true);
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) {
             console.error("Erro ao buscar sessão:", sessionError);
@@ -50,20 +51,22 @@ export default function TableRegistro({valores, onSuccess }){
 
         const user = session.user;
         
-        const dataAtual = new Date();
+        // transforma a string "YYYY-MM-DD" em Date
+        const dataSelecionada = new Date(dataRegistro + "T00:00:00"); 
+        // ajusta para fuso de Brasília (-3h)
+        const dataBrasilia = new Date(dataSelecionada.getTime() - (3 * 60 * 60 * 1000));
 
-        // Subtrai 3 horas (3 * 60 * 60 * 1000 milissegundos) para ajustar para o fuso horário de Brasília
-        const dataBrasilia = new Date(dataAtual.getTime() - (3 * 60 * 60 * 1000));
         try {
+          setProgress(true);
             const {data, error} = await supabase
                 .from("transacoes")
                 .insert([
                     { 
-                        categoria, 
+                        status, 
                         valor, 
                         tipo, 
                         descricao, 
-                        data:dataBrasilia.toISOString(), 
+                        data_criacao:dataBrasilia.toISOString(), 
                         user_id: user.id}
                 ]);
             if (error) console.error(error);
@@ -78,6 +81,7 @@ export default function TableRegistro({valores, onSuccess }){
             console.error("Algo deu errado", error);
         }finally{
             setLoadingButton(false);
+            setProgress(false);
         }
         
     }
@@ -110,12 +114,6 @@ export default function TableRegistro({valores, onSuccess }){
       }
     }
 
-    const handleEdit = (row) => {
-      setEditingId(row.id);
-      setEditFormData(row); // Preenche o formulário com os dados da linha
-    };
-
-
     const handleOpen = (row) => {
       setEditingRow(row);
       setOpen(true);
@@ -127,6 +125,7 @@ export default function TableRegistro({valores, onSuccess }){
     };
 
     const handleSave = async () => {
+      setProgress(true);
       try {
         const { error } = await supabase
           .from("transacoes")
@@ -142,6 +141,8 @@ export default function TableRegistro({valores, onSuccess }){
         }
       } catch (err) {
         console.error("Erro inesperado ao salvar:", err);
+      } finally{
+        setProgress(false);
       }
     };
 
@@ -164,13 +165,8 @@ export default function TableRegistro({valores, onSuccess }){
       }
     };
 
-
-
-
     return(
     <>
-     <Container sx={{ margin: '1rem', display: 'flex', alignItems: 'center', width: '100%' }}>
-     </Container>
      <Button 
      loading={loadingButton}
      variant="contained" 
@@ -184,7 +180,7 @@ export default function TableRegistro({valores, onSuccess }){
         <Table>
           <TableHead>
             <TableRow>
-              <StyledTableCell>Categoria</StyledTableCell>
+              <StyledTableCell>status</StyledTableCell>
               <StyledTableCell>Tipo</StyledTableCell>
               <StyledTableCell>Valor</StyledTableCell>
               <StyledTableCell>Data</StyledTableCell>
@@ -202,20 +198,20 @@ export default function TableRegistro({valores, onSuccess }){
             ): rows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={4} align="center">
-                    Nada Incluído ainda!
+                    Nada Incluído ainda no dia atual!
                 </TableCell>
               </TableRow>
             ) : (
               rows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>{row.categoria}</TableCell>
+                  <TableCell>{row.status}</TableCell>
                   <TableCell>{row.tipo}</TableCell>
                   <TableCell>{row.valor.toLocaleString('pt-BR', {
                     style: 'currency',
                     currency: 'BRL',
                     minimumFractionDigits: 2,
                   })}</TableCell>
-                  <TableCell>{new Date(row.data).toLocaleDateString('pt-br')}</TableCell>
+                  <TableCell>{new Date(row.data_criacao).toLocaleDateString('pt-br')}</TableCell>
                   <TableCell>{row.descricao}</TableCell>
                   <TableCell>
                     <Button variant="contained" onClick={() => handleOpen(row)} size="small">
@@ -231,6 +227,7 @@ export default function TableRegistro({valores, onSuccess }){
           </TableBody>
         </Table>
       </TableContainer>
+      <Progress visible={progress}/>
       <Dialog open={open} onClose={handleClose}>
       <DialogTitle>Editar Registro</DialogTitle>
       <DialogContent>
@@ -252,19 +249,18 @@ export default function TableRegistro({valores, onSuccess }){
                 </Select>
             </FormControl>
             <FormControl fullWidth sx={{marginTop:'1rem'}}>
-                <InputLabel id="label-categoria">Selecione a Categoria</InputLabel>
+                <InputLabel id="label-status">Selecione a status</InputLabel>
                 <Select
-                    labelId="label-categoria"
+                    labelId="label-status"
                     id="demo-simple-select"
-                    value={editingRow.categoria}
+                    value={editingRow.status}
                     variant="standard"
                     label="Age"
                     margin="dense"
-                    onChange={(e) => setEditingRow({ ...editingRow, categoria: e.target.value })}
+                    onChange={(e) => setEditingRow({ ...editingRow, status: e.target.value })}
                 >
-                <MenuItem value={"Contas Fixas"}>Contas Fixas</MenuItem>
-                <MenuItem value={"Saude"}>Saúde</MenuItem>
-                <MenuItem value={"Carro"}>Carro</MenuItem>
+                <MenuItem value={"Pago"}>Pago</MenuItem>
+                <MenuItem value={"Devedor"}>Devedor</MenuItem>   
                 </Select>
             </FormControl>
             <TextField

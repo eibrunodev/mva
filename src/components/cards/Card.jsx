@@ -72,7 +72,7 @@ function SelectActionCard( {valores} ) {
               },
             }}
           >
-            <CardContent sx={{ height: '100%', backgroundColor: card.id === 'entrada' ? '#258ce5' : card.id === 'saida' ? '#e55342' : '#1ba462' }}>
+            <CardContent sx={{ height: '100%', backgroundColor: card.id === 'entrada' ? '#258ce5' : card.id === 'saida' ? '#e55342' : card.id === 'total' && valores[card.id] < 0  ? '#c5384fff' : '#1ba462'   }}>
              <Typography
                 sx={{
                     fontSize: {

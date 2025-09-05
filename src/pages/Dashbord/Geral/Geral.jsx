@@ -11,15 +11,15 @@ import {
 } from "@mui/material";
 import Progress from "../../../components/progress/Progress";
 
-export default function TransacoesTable() {
-  const [rows, setRows] = useState([]);
+export default function Geral() {
+  const [allRows, setAllRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [entradas, setEntradas] = useState(0);
   const [saidas, setSaidas] = useState(0);
   const [total, setTotal] = useState(0);
   const [filterDescription, setFilterDescription] = useState("");
-  const [filterDateFrom, setFilterDateFrom] = useState("");
-  const [filterDateTo, setFilterDateTo] = useState("");
+  const [filterDateFrom, setFilterDateFrom] = useState(""); // Novo estado: data inicial
+  const [filterDateTo, setFilterDateTo] = useState("");   // Novo estado: data final
   const [editingRow, setEditingRow] = useState(null);
   const [open, setOpen] = useState(false);
   const [progress, setProgress] = useState(false);
@@ -49,55 +49,46 @@ export default function TransacoesTable() {
       return;
     }
 
-    const hoje = new Date();
-    const mesAtual = hoje.getMonth();
-    const anoAtual = hoje.getFullYear();
-
-    const transacoesMes = (data || []).filter((valor) => {
-      const dataTransacao = new Date(valor.data);
-      return (
-        dataTransacao.getMonth() === mesAtual &&
-        dataTransacao.getFullYear() === anoAtual
-      );
-    });
-
-    const totalEntradas = transacoesMes.reduce((result, valor) => {
-      return valor.tipo === "Entrada" ? result + valor.valor : result;
-    }, 0);
-
-    const totalSaidas = transacoesMes.reduce((result, valor) => {
-      return valor.tipo === "Saida" ? result + valor.valor : result;
-    }, 0);
-
-    setRows(transacoesMes);
-    setEntradas(totalEntradas);
-    setSaidas(totalSaidas);
-    setTotal(totalEntradas - totalSaidas);
+    setAllRows(data || []);
     setLoading(false);
   }
 
-  const filteredRows = useMemo(() => {
-    let filtered = rows;
+  const filteredAndCalculatedRows = useMemo(() => {
+    let filtered = allRows;
 
-    if (filterDateFrom) {
-      // Correção: Adicionar 'T00:00:00' para garantir que a data seja interpretada localmente
-      const dateFrom = new Date(filterDateFrom + 'T00:00:00'); 
+    // Lógica de filtro por intervalo de datas
+    if (filterDateFrom && filterDateTo) {
+      const dateFrom = new Date(filterDateFrom + "T00:00:00");
+      const dateTo = new Date(filterDateTo + "T23:59:59");
+      
       filtered = filtered.filter((row) => {
         const rowDate = new Date(row.data);
-        return (
-          rowDate.getFullYear() === dateFrom.getFullYear() &&
-          rowDate.getMonth() === dateFrom.getMonth() &&
-          rowDate.getDate() === dateFrom.getDate()
-        );
+        return rowDate >= dateFrom && rowDate <= dateTo;
+      });
+    } else if (filterDateFrom) {
+      // Se apenas a data inicial for preenchida
+      const dateFrom = new Date(filterDateFrom + "T00:00:00");
+      filtered = filtered.filter((row) => {
+        const rowDate = new Date(row.data);
+        return rowDate >= dateFrom;
+      });
+    } else if (filterDateTo) {
+      // Se apenas a data final for preenchida
+      const dateTo = new Date(filterDateTo + "T23:59:59");
+      filtered = filtered.filter((row) => {
+        const rowDate = new Date(row.data);
+        return rowDate <= dateTo;
       });
     }
 
+    // Lógica de filtro por descrição (aplicada na lista já filtrada)
     if (filterDescription) {
       filtered = filtered.filter((row) =>
         row.descricao.toLowerCase().includes(filterDescription.toLowerCase())
       );
     }
 
+    // Cálculo dos totais
     const totalEntradas = filtered.reduce((acc, row) => {
       return row.tipo === "Entrada" ? acc + row.valor : acc;
     }, 0);
@@ -111,7 +102,7 @@ export default function TransacoesTable() {
     setTotal(totalEntradas - totalSaidas);
 
     return filtered;
-  }, [rows, filterDateFrom, filterDateTo, filterDescription]);
+  }, [allRows, filterDateFrom, filterDateTo, filterDescription]);
 
   const handleOpen = (row) => {
     setEditingRow(row);
@@ -125,10 +116,7 @@ export default function TransacoesTable() {
 
   const handleDelete = async (id) => {
     try {
-      const { error } = await supabase
-        .from("transacoes")
-        .delete()
-        .eq("id", id);
+      const { error } = await supabase.from("transacoes").delete().eq("id", id);
 
       if (error) {
         console.error("Erro ao apagar:", error);
@@ -169,12 +157,15 @@ export default function TransacoesTable() {
         <Cards valores={{ entrada: entradas, saida: saidas, total: total }} />
       </Container>
       <Progress visible={progress} />
+
+      {/* Inputs de filtro */}
       <Container
         sx={{
           marginBottom: "1rem",
           display: "flex",
           gap: 2,
           justifyContent: "flex-end",
+          flexWrap: "wrap",
         }}
       >
         <TextField
@@ -183,6 +174,7 @@ export default function TransacoesTable() {
           size="small"
           value={filterDescription}
           onChange={(e) => setFilterDescription(e.target.value)}
+          sx={{ minWidth: 200 }}
         />
         <TextField
           label="Data De"
@@ -193,12 +185,23 @@ export default function TransacoesTable() {
           onChange={(e) => setFilterDateFrom(e.target.value)}
           InputLabelProps={{ shrink: true }}
         />
+        <TextField
+          label="Data Até"
+          type="date"
+          variant="outlined"
+          size="small"
+          value={filterDateTo}
+          onChange={(e) => setFilterDateTo(e.target.value)}
+          InputLabelProps={{ shrink: true }}
+        />
       </Container>
+      {/* --- */}
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
             <TableRow>
-              <StyledTableCell>status</StyledTableCell>
+              <StyledTableCell>Categoria</StyledTableCell>
               <StyledTableCell>Tipo</StyledTableCell>
               <StyledTableCell>Valor</StyledTableCell>
               <StyledTableCell>Data</StyledTableCell>
@@ -213,29 +216,43 @@ export default function TransacoesTable() {
                   <Skeleton animation="wave" height={40} />
                 </TableCell>
               </TableRow>
-            ) : filteredRows.length === 0 ? (
+            ) : filteredAndCalculatedRows.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={6} align="center">
                   Nenhuma transação encontrada
                 </TableCell>
               </TableRow>
             ) : (
-              filteredRows.map((row) => (
+              filteredAndCalculatedRows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>{row.status}</TableCell>
+                  <TableCell>{row.categoria}</TableCell>
                   <TableCell>{row.tipo}</TableCell>
-                  <TableCell>{row.valor.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                    minimumFractionDigits: 2,
-                  })}</TableCell>
-                  <TableCell>{new Date(row.data).toLocaleDateString('pt-br')}</TableCell>
+                  <TableCell>
+                    {row.valor.toLocaleString("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                      minimumFractionDigits: 2,
+                    })}
+                  </TableCell>
+                  <TableCell>
+                    {new Date(row.data).toLocaleDateString("pt-br")}
+                  </TableCell>
                   <TableCell>{row.descricao}</TableCell>
                   <TableCell>
-                    <Button variant="contained" onClick={() => handleOpen(row)} size="small">
+                    <Button
+                      variant="contained"
+                      onClick={() => handleOpen(row)}
+                      size="small"
+                    >
                       Editar
                     </Button>
-                    <Button onClick={() => handleDelete(row.id)} variant="outlined" color="error" size="small" sx={{ ml: 1 }}>
+                    <Button
+                      onClick={() => handleDelete(row.id)}
+                      variant="outlined"
+                      color="error"
+                      size="small"
+                      sx={{ ml: 1 }}
+                    >
                       Apagar
                     </Button>
                   </TableCell>

@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import Progress from "../../../components/progress/Progress";
 
-export default function TransacoesTable() {
+export default function ContasFixas() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [entradas, setEntradas] = useState(0);
@@ -222,7 +222,6 @@ export default function TransacoesTable() {
             ) : (
               filteredRows.map((row) => (
                 <TableRow key={row.id}>
-                  <TableCell>{row.status}</TableCell>
                   <TableCell>{row.tipo}</TableCell>
                   <TableCell>{row.valor.toLocaleString('pt-BR', {
                     style: 'currency',

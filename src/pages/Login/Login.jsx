@@ -5,7 +5,7 @@ import Logo from '../../assets/img/Logo-web.png';
 import { supabase } from "../../services/supabaseClient";
 import {useNavigate} from 'react-router-dom';
 import CircularProgress from '@mui/material/CircularProgress';
-import axios from 'axios';
+
 
 export default function Login() {
   const navigate = useNavigate();

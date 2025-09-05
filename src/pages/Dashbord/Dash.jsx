@@ -3,13 +3,18 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { createTheme } from '@mui/material/styles';
 import AssessmentIcon from '@mui/icons-material/Assessment';
+import OpenInFullIcon from '@mui/icons-material/OpenInFull';
+import CrisisAlertIcon from '@mui/icons-material/CrisisAlert';
+import BorderColorIcon from '@mui/icons-material/BorderColor';
+
 import { AppProvider } from '@toolpad/core/AppProvider';
 import { DashboardLayout } from '@toolpad/core/DashboardLayout';
 import { DemoProvider, useDemoRouter } from '@toolpad/core/internal';
 import Logo from '../../assets/img/Logo-web.png';
 import Fluxo from './Fluxo/Fluxo';
 import Registra from './Registrar/Registrar';
-import BorderColorIcon from '@mui/icons-material/BorderColor';
+import Geral from './Geral/geral';
+import MetaFinanceira from './Meta_Financeira/MetaFinanceira';
 
 const demoTheme = createTheme({
   cssVariables: {
@@ -32,6 +37,10 @@ function DemoPageContent({ pathname }) {
     return <Fluxo />;
   } else if (pathname === '/registrar'){
     return <Registra />
+  } else if (pathname === '/geral'){
+    return <Geral/>
+  }else if (pathname === '/meta-financeira'){
+    return <MetaFinanceira/>
   }
   return (
     <Box
@@ -61,13 +70,23 @@ export default function DashboardLayoutNavigationLinks() {
         navigation={[
          {
             segment: 'fluxo',
-            title: 'Fluxo',
+            title: 'Fluxo das Diárias Mês',
             icon: <AssessmentIcon />, 
           },
           {
             segment:'registrar',
-            title:'Registrar',
+            title:'Registrar Diárias',
             icon:<BorderColorIcon />
+          },
+           {
+            segment: 'geral',
+            title: 'Fluxo Geral',
+            icon: <OpenInFullIcon />, 
+          },
+          {
+            segment: 'meta-financeira',
+            title: 'Meta Financeira',
+            icon: <CrisisAlertIcon />,
           }
         ]}
         router={router}

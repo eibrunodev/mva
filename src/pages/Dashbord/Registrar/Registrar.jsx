@@ -8,31 +8,39 @@ import BorderColorIcon from '@mui/icons-material/BorderColor';
 import CategoryIcon from '@mui/icons-material/Category';
 import TableRegistro from '../../../components/TabelaRegistros/TableRegistro'
 
+
 export default function Registra(){
     const theme = useTheme();
     const isDark = theme.palette.mode === "dark";
     const [tipo, setTipo] = useState('');
     const [descricao, setDescricao] = useState('')
     const [valor, setValor] = useState(0)
-    const [categoria, setCategoria] = useState('')
+    const [status, setStatus] = useState('')
+    const [dataRegistrar, setDataRegistrar] = useState()
+    
     const handleChangeTipo = (event) => {
         setTipo(event.target.value);
     };
 
-    const handleChangeCat = (event) => {
-        setCategoria(event.target.value);
+    const handleStatus = (event) => {
+        setStatus(event.target.value);
     };
 
     const handleDescricao = (event) => {
         setDescricao(event.target.value);
     }
 
+    const handleDataRegistrar = (event) => {
+        setDataRegistrar(event.target.value);
+    }
+    
+
     // Função para limpar os estados
     const resetStates = () => {
         setTipo('');
         setDescricao('');
         setValor(0); // Para o InputMoeda, pode ser 0 ou ''
-        setCategoria('');
+        setStatus('');
     };
 
     return(
@@ -44,10 +52,10 @@ export default function Registra(){
                         xs: "12px", // telas pequenas
                         sm: "18px",
                         md: "24px",
-                        lg: "42px",
+                        lg: "35px",
                     }
                     }}>
-                        Registre Suas Entradas e Saídas
+                        Registre Suas Diárias
                     </Typography>
                     <Box 
                         sx={{ 
@@ -74,18 +82,17 @@ export default function Registra(){
                                     </Select>
                                 </FormControl>
                                 <CategoryIcon sx={{fontSize: 40, marginRight:"3px"}}/>
-                                <FormControl sx={{ flex: '100%', margin: '1rem'}}>
-                                    <InputLabel id="label-categoria">Selecione a Categoria</InputLabel>
+                                <FormControl  sx={{ flex: '100%', margin: '1rem'}}>
+                                    <InputLabel id="label-tipo">Selecione o status</InputLabel>
                                     <Select
-                                        labelId="label-categoria"
+                                        labelId="label-status"
                                         id="demo-simple-select"
-                                        value={categoria}
+                                        value={status}
                                         label="Age"
-                                        onChange={handleChangeCat}
-                                    >
-                                    <MenuItem value={"Contas Fixas"}>Contas Fixas</MenuItem>
-                                    <MenuItem value={"Saude"}>Saúde</MenuItem>
-                                    <MenuItem value={"Carro"}>Carro</MenuItem>
+                                        onChange={handleStatus}
+                                        >
+                                        <MenuItem value={"Pago"}>Pago</MenuItem>
+                                        <MenuItem value={"Devedor"}>Devedor</MenuItem>
                                     </Select>
                                 </FormControl>
                         </Box>
@@ -115,11 +122,29 @@ export default function Registra(){
                                       value={valor}
                                       onChange={setValor}
                                     />
+                                    <TextField 
+                                        type="date"
+                                        sx={{
+                                            width:'100%',
+                                            input: { 
+                                            fontSize: "1rem" 
+                                            },
+                                            "& label": { 
+                                            color: isDark ? "#fff" : "#333" 
+                                            },
+                                            "& .MuiOutlinedInput-root .MuiOutlinedInput-notchedOutline": {
+                                            borderColor: isDark ? "#fff" : "#333",
+                                            },
+                                            margin: '1rem'
+                                        }}
+                                        variant="outlined"
+                                        onChange={handleDataRegistrar}
+                                    />
                         </Box>
                     </Box>
                     <TableRegistro 
-                    valores={{tipo:tipo, categoria:categoria, descricao:descricao, valor:valor}}
-                    onSuccess={() => { resetStates() }}
+                        valores={{tipo:tipo, status:status, descricao:descricao, valor:valor, dataRegistro:dataRegistrar}}
+                        onSuccess={() => { resetStates() }}
                     />
                 </Box>
             </Container>
